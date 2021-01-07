@@ -1,3 +1,4 @@
+import argparse
 import os
 import random
 import time
@@ -11,21 +12,21 @@ from keras.models import Sequential
 from keras.optimizers import Adam
 
 # based on: https://gym.openai.com/evaluations/eval_EIcM1ZBnQW2LBaFN6FY65g/
+# Repository: https://github.com/udacity/deep-reinforcement-learning
 
 # ENV_NAME = 'MountainCar-v0'
 # ENV_NAME = 'LunarLander-v2'
 ENV_NAME = "CartPole-v1"
 
 GAMMA = 0.95
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.1
 LEARNING_RATE_DECAY = 0.01
-MEMORY_SIZE = 1000000
+MEMORY_SIZE = 10000
 BATCH_SIZE = 64
-MODEL_PATH = f'{ENV_NAME}_model'
-FRAME_RATE = 0.01
-EXPLORATION_MAX = 0.985
+FRAME_RATE = 0.00
+EXPLORATION_MAX = 1
 EXPLORATION_MIN = 0.01
-EXPLORATION_DECAY = 0.995
+EXPLORATION_DECAY = 0.95
 
 EXPLORATION = EXPLORATION_MAX
 
@@ -60,14 +61,14 @@ class Policy:
             actions.append(action)
             next_state, reward, done, _ = self.env.step(action)
             if render:
-                time.sleep(0.01)
+                time.sleep(FRAME_RATE)
                 env.render()
             next_state = self.process_state(next_state)
             self.remember(state, action, reward, next_state, done)
             state = next_state
             score += reward
-
-        self.learn()
+        if not PLAY_MODE:
+            self.learn()
         return score
 
 
@@ -142,8 +143,24 @@ class RandomAgent(Policy):
 run = 1
 scores = []
 
-
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('--play-mode', dest='play_mode', default=False, type=bool)
+    parser.add_argument('--exploration', dest='exploration', default=1, type=float)
+    parser.add_argument('--env', dest='env', default=ENV_NAME, type=str)
+
+    args = parser.parse_args()
+    ENV_NAME = args.env
+    EXPLORATION = args.exploration
+    PLAY_MODE = args.play_mode
+    MODEL_PATH = f'{ENV_NAME}_model'
+
+    if PLAY_MODE:
+        print('Playing for fun!')
+    else:
+        print('Learning for fun!')
+
+    print(f'Environment: {ENV_NAME}, exploration: {EXPLORATION}')
     env = gym.make(ENV_NAME)
     policy = DQNAgent(env)
     while True:
